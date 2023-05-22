@@ -276,7 +276,7 @@ func Test_UnitOfWork_Clear(t *testing.T) {
 
 func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 	// Connect to db and prepare tables
-	db, err := sql.Open("mysql", "user:user@tcp(mysql:3306)/test")
+	db, err := sql.Open("mysql", "user:user@tcp(127.0.0.1:3306)/test")
 	require.Nil(t, err)
 	defer db.Close()
 
@@ -436,7 +436,7 @@ func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 
 func Test_UnitOfWork_Do_WhenTransactionFails(t *testing.T) {
 	// Connect to db and prepare tables
-	db, err := sql.Open("mysql", "user:user@tcp(mysql:3306)/test")
+	db, err := sql.Open("mysql", "user:user@tcp(127.0.0.1:3306)/test")
 	require.Nil(t, err)
 	defer db.Close()
 

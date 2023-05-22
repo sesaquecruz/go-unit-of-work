@@ -17,14 +17,3 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
       retries: 12
-
-  uow:
-    depends_on:
-      mysql:
-        condition: service_healthy
-    build: .
-    image: uow:compose
-    hostname: uow
-    container_name: uow
-    volumes:
-      - .:/app
