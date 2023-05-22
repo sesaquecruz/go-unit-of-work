@@ -14,7 +14,29 @@ jobs:
   version-and-test:
     runs-on: ubuntu-latest
 
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: test
+      DB_USER: user
+      DB_PASSWORD: user
+
+    services:
+      mysql:
+        image: mysql:8.0.32
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: $DB_NAME
+          MYSQL_USER: $DB_USER
+          MYSQL_PASSWORD: $DB_PASSWORD
+        ports:
+          - $DB_PORT:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=12
+
     steps:
+      - name: Wait MySQL
+        run: until mysql -h$DB_HOST -u$DB_USER -p$DB_PASSWORD $DB_NAME -e ";" ; do sleep 5; done
+
       - name: Checkout code
         uses: actions/checkout@v3
         with:
