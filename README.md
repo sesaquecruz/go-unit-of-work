@@ -31,13 +31,13 @@ UOW := uow.NewUnitOfWork(db)
 3. Register the repositories using the `Register` method:
 
 ```
-UOW.Register("ProductRepository", func(tx *sql.Tx) Repository {
+UOW.Register("ProductRepository", func(tx *sql.Tx) uow.Repository {
 	return NewProductRepository(tx)
 })
 ```
 
 ```
-UOW.Register("OrderRepository", func(tx *sql.Tx) Repository {
+UOW.Register("OrderRepository", func(tx *sql.Tx) uow.Repository {
 	return NewOrderRepository(tx)
 })
 ```
