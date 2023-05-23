@@ -32,13 +32,13 @@ UOW := uow.NewUnitOfWork(db)
 
 ```
 UOW.Register("ProductRepository", func(tx *sql.Tx) Repository {
-		return NewProductRepository(tx)
+	return NewProductRepository(tx)
 })
 ```
 
 ```
 UOW.Register("OrderRepository", func(tx *sql.Tx) Repository {
-		return NewOrderRepository(tx)
+	return NewOrderRepository(tx)
 })
 ```
 
@@ -46,33 +46,33 @@ UOW.Register("OrderRepository", func(tx *sql.Tx) Repository {
 
 ```
 err = UOW.Do(ctx, func(ctx context.Context, tx uow.TX) error {
-		// Get repositories
-		// ...
+	// Get repositories
+	// ...
 
-		// Get product repository
-		repository, err := tx.Get("ProductRepository")
-		if err != nil {
-			return err
-		}
+	// Get product repository
+	repository, err := tx.Get("ProductRepository")
+	if err != nil {
+		return err
+	}
 
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid repository type")
-		}
+	productRepository, ok := repository.(*ProductRepository)
+	if !ok {
+		return errors.New("invalid repository type")
+	}
 
-		// Get order repository
-		repository, err = tx.Get("OrderRepository")
-		if err != nil {
-			return err
-		}
+	// Get order repository
+	repository, err = tx.Get("OrderRepository")
+	if err != nil {
+		return err
+	}
 
-		orderRepository, ok := repository.(*OrderRepository)
-		if !ok {
-			return errors.New("invalid repository type")
-		}
+	orderRepository, ok := repository.(*OrderRepository)
+	if !ok {
+		return errors.New("invalid repository type")
+	}
 
-		// Execute operations
-		// ...
+	// Execute operations
+	// ...
 })
 ```
 
