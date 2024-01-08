@@ -164,6 +164,45 @@ func Test_Transaction_Get(t *testing.T) {
 	assert.Same(t, tx, orderRepository.(*OrderRepository).tx)
 }
 
+func Test_GetAs(t *testing.T) {
+	tx := &sql.Tx{}
+	repositories := make(map[RepositoryName]RepositoryFactory)
+
+	transaction := NewTransaction(tx, repositories)
+
+	_, err := transaction.Get("ProductRepository")
+	assert.ErrorIs(t, ErrRepositoryNotRegistered, err)
+
+	_, err = transaction.Get("OrderRepository")
+	assert.ErrorIs(t, ErrRepositoryNotRegistered, err)
+
+	transaction.repositories["ProductRepository"] = func(tx *sql.Tx) Repository {
+		return NewProductRepository(tx)
+	}
+
+	transaction.repositories["OrderRepository"] = func(tx *sql.Tx) Repository {
+		return NewOrderRepository(tx)
+	}
+
+	productRepository, err := GetAs[*ProductRepository](transaction, "ProductRepository")
+	assert.Nil(t, err)
+	assert.IsType(t, &ProductRepository{}, productRepository)
+	assert.Same(t, tx, productRepository.tx)
+
+	_, err = GetAs[ProductRepository](transaction, "ProductRepository")
+	assert.ErrorIs(t, err, ErrInvalidRepositoryType,
+		"trying to cast pointer object to value object")
+
+	orderRepository, err := GetAs[*OrderRepository](transaction, "OrderRepository")
+	assert.Nil(t, err)
+	assert.IsType(t, &OrderRepository{}, orderRepository)
+	assert.Same(t, tx, orderRepository.tx)
+
+	_, err = GetAs[OrderRepository](transaction, "OrderRepository")
+	assert.ErrorIs(t, err, ErrInvalidRepositoryType,
+		"trying to cast pointer object to value object")
+}
+
 func Test_UnitOfWork_NewUnitOfWork(t *testing.T) {
 	db := &sql.DB{}
 
@@ -288,7 +327,7 @@ func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 
 	_, err = db.Exec(`
 		CREATE TABLE products (
-			id VARCHAR(36) PRIMARY KEY, 
+			id VARCHAR(36) PRIMARY KEY,
 			amount INT(32) UNSIGNED NOT NULL
 	  	);
 	`)
@@ -296,8 +335,8 @@ func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 
 	_, err = db.Exec(`
 		CREATE TABLE orders (
-			id VARCHAR(36) PRIMARY KEY, 
-			product_id VARCHAR(36) NOT NULL, 
+			id VARCHAR(36) PRIMARY KEY,
+			product_id VARCHAR(36) NOT NULL,
 			amount INT(32) UNSIGNED NOT NULL,
 			FOREIGN KEY (product_id) REFERENCES products(id)
 	  	);
@@ -321,14 +360,10 @@ func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 
 	err = uow.Do(ctx, func(ctx context.Context, tx TX) error {
 		// Get repository
-		repository, err := tx.Get("ProductRepository")
+
+		productRepository, err := GetAs[*ProductRepository](tx, "ProductRepository")
 		if err != nil {
 			return err
-		}
-
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid type")
 		}
 
 		// Save product
@@ -342,24 +377,14 @@ func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 
 	err = uow.Do(ctx, func(ctx context.Context, tx TX) error {
 		// Get repositories
-		repository, err := tx.Get("ProductRepository")
+		productRepository, err := GetAs[*ProductRepository](tx, "ProductRepository")
 		if err != nil {
 			return err
 		}
 
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid type")
-		}
-
-		repository, err = tx.Get("OrderRepository")
+		orderRepository, err := GetAs[*OrderRepository](tx, "OrderRepository")
 		if err != nil {
 			return err
-		}
-
-		orderRepository, ok := repository.(*OrderRepository)
-		if !ok {
-			return errors.New("invalid type")
 		}
 
 		// Get itens
@@ -389,24 +414,14 @@ func Test_UnitOfWork_Do_WhenTransactionSucceeds(t *testing.T) {
 	// Verify amounts
 	err = uow.Do(ctx, func(ctx context.Context, tx TX) error {
 		// Get repositories
-		repository, err := tx.Get("ProductRepository")
+		productRepository, err := GetAs[*ProductRepository](tx, "ProductRepository")
 		if err != nil {
 			return err
 		}
 
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid type")
-		}
-
-		repository, err = tx.Get("OrderRepository")
+		orderRepository, err := GetAs[*OrderRepository](tx, "OrderRepository")
 		if err != nil {
 			return err
-		}
-
-		orderRepository, ok := repository.(*OrderRepository)
-		if !ok {
-			return errors.New("invalid type")
 		}
 
 		// Get itens
@@ -448,7 +463,7 @@ func Test_UnitOfWork_Do_WhenTransactionFails(t *testing.T) {
 
 	_, err = db.Exec(`
 		CREATE TABLE products (
-			id VARCHAR(36) PRIMARY KEY, 
+			id VARCHAR(36) PRIMARY KEY,
 			amount INT(32) UNSIGNED NOT NULL
 	  	);
 	`)
@@ -456,8 +471,8 @@ func Test_UnitOfWork_Do_WhenTransactionFails(t *testing.T) {
 
 	_, err = db.Exec(`
 		CREATE TABLE orders (
-			id VARCHAR(36) PRIMARY KEY, 
-			product_id VARCHAR(36) NOT NULL, 
+			id VARCHAR(36) PRIMARY KEY,
+			product_id VARCHAR(36) NOT NULL,
 			amount INT(32) UNSIGNED NOT NULL,
 			FOREIGN KEY (product_id) REFERENCES products(id)
 	  	);
@@ -481,14 +496,9 @@ func Test_UnitOfWork_Do_WhenTransactionFails(t *testing.T) {
 
 	err = uow.Do(ctx, func(ctx context.Context, tx TX) error {
 		// Get repository
-		repository, err := tx.Get("ProductRepository")
+		productRepository, err := GetAs[*ProductRepository](tx, "ProductRepository")
 		if err != nil {
 			return err
-		}
-
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid type")
 		}
 
 		// Save product
@@ -502,24 +512,14 @@ func Test_UnitOfWork_Do_WhenTransactionFails(t *testing.T) {
 
 	err = uow.Do(ctx, func(ctx context.Context, tx TX) error {
 		// Get repositories
-		repository, err := tx.Get("ProductRepository")
+		productRepository, err := GetAs[*ProductRepository](tx, "ProductRepository")
 		if err != nil {
 			return err
 		}
 
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid type")
-		}
-
-		repository, err = tx.Get("OrderRepository")
+		orderRepository, err := GetAs[*OrderRepository](tx, "OrderRepository")
 		if err != nil {
 			return err
-		}
-
-		orderRepository, ok := repository.(*OrderRepository)
-		if !ok {
-			return errors.New("invalid type")
 		}
 
 		// Get itens
@@ -552,24 +552,14 @@ func Test_UnitOfWork_Do_WhenTransactionFails(t *testing.T) {
 	// Verify amounts
 	err = uow.Do(ctx, func(ctx context.Context, tx TX) error {
 		// Get Repositories
-		repository, err := tx.Get("ProductRepository")
+		productRepository, err := GetAs[*ProductRepository](tx, "ProductRepository")
 		if err != nil {
 			return err
 		}
 
-		productRepository, ok := repository.(*ProductRepository)
-		if !ok {
-			return errors.New("invalid type")
-		}
-
-		repository, err = tx.Get("OrderRepository")
+		orderRepository, err := GetAs[*OrderRepository](tx, "OrderRepository")
 		if err != nil {
 			return err
-		}
-
-		orderRepository, ok := repository.(*OrderRepository)
-		if !ok {
-			return errors.New("invalid type")
 		}
 
 		// Get itens

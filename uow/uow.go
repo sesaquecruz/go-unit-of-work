@@ -13,6 +13,7 @@ import (
 var (
 	ErrRepositoryNotRegistered     = errors.New("repository not registered")
 	ErrRepositoryAlreadyRegistered = errors.New("repository already registered")
+	ErrInvalidRepositoryType       = errors.New("invalid repository type")
 )
 
 type RepositoryName string
@@ -45,6 +46,22 @@ func NewTransaction(tx *sql.Tx, repositories map[RepositoryName]RepositoryFactor
 		tx:           tx,
 		repositories: repositories,
 	}
+}
+
+// Return repository of type T if any found.
+// In case of type cast error returns ErrInvalidRepositoryType.
+func GetAs[T any](t TX, name RepositoryName) (T, error) {
+	repository, err := t.Get(name)
+	var res T
+	if err != nil {
+		return res, err
+	}
+	res, ok := repository.(T)
+	if !ok {
+		return res, ErrInvalidRepositoryType
+	}
+
+	return res, nil
 }
 
 // Given a repository name returns a repository. Return an error if the repository does not exist.
