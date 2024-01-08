@@ -47,28 +47,15 @@ UOW.Register("OrderRepository", func(tx *sql.Tx) uow.Repository {
 ```
 err = UOW.Do(ctx, func(ctx context.Context, tx uow.TX) error {
 	// Get repositories
-	// ...
 
-	// Get product repository
-	repository, err := tx.Get("ProductRepository")
+	productRepository, err := uow.GetAs[*ProductRepository](tx, "ProductRepository")
 	if err != nil {
 		return err
 	}
 
-	productRepository, ok := repository.(*ProductRepository)
-	if !ok {
-		return errors.New("invalid repository type")
-	}
-
-	// Get order repository
-	repository, err = tx.Get("OrderRepository")
+	orderRepository, err := uow.GetAs[*OrderRepository](tx, "OrderRepository")
 	if err != nil {
 		return err
-	}
-
-	orderRepository, ok := repository.(*OrderRepository)
-	if !ok {
-		return errors.New("invalid repository type")
 	}
 
 	// Execute operations
